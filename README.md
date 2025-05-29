@@ -11,7 +11,7 @@
 ## Установка и запуск
 1. Клонируйте репозиторий:
 
- git clone <ссылка на репозиторий>
+ git clone [ссылка на репозиторий](https://github.com/Pinchinium/kai_vkr.git)
 
 2. Установите зависимости:
  pip install -r requirements.txt
