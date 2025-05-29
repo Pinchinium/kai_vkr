@@ -6,7 +6,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
+from xgboost import *
 from sklearn.metrics import (accuracy_score, confusion_matrix, classification_report, 
                             roc_auc_score, roc_curve, precision_recall_curve, auc)
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -31,15 +31,19 @@ def analysis_and_model_page():
     data = data.drop(columns=['UDI', 'Product ID', 'TWF', 'HDF', 'PWF', 'OSF', 'RNF'], errors='ignore')
     data['Type'] = LabelEncoder().fit_transform(data['Type'])
     
+    # Переименование колонок для работы XGBoost
+    data.columns = data.columns.str.replace(r"[\[\]<>]", "", regex=True)
+    data.columns = data.columns.str.replace(" ", "_")
+
     # Масштабирование
     scaler = StandardScaler()
-    num_cols = ['Air temperature [K]', 'Process temperature [K]', 
-                'Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']
+    num_cols = ['Air_temperature_K', 'Process_temperature_K',
+            'Rotational_speed_rpm', 'Torque_Nm', 'Tool_wear_min']
     data[num_cols] = scaler.fit_transform(data[num_cols])
-    
+
     # Разделение данных
-    X = data.drop('Machine failure', axis=1)
-    y = data['Machine failure']
+    X = data.drop('Machine_failure', axis=1)
+    y = data['Machine_failure']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     
     # Обучение моделей
@@ -145,12 +149,12 @@ def analysis_and_model_page():
             if st.form_submit_button("Предсказать"):
                 input_data = pd.DataFrame({
                     'Type': [{"L":0, "M":1, "H":2}[type_val]],
-                    'Air temperature [K]': [air_temp],
-                    'Process temperature [K]': [process_temp],
-                    'Rotational speed [rpm]': [rotational_speed],
-                    'Torque [Nm]': [torque],
-                    'Tool wear [min]': [tool_wear]
-                })
+                    'Air_temperature_K': [air_temp],
+                    'Process_temperature_K': [process_temp],
+                    'Rotational_speed_rpm': [rotational_speed],
+                    'Torque_Nm': [torque],
+                    'Tool_wear_min': [tool_wear]
+                    })
                 
                 # Масштабирование
                 input_data[num_cols] = scaler.transform(input_data[num_cols])
@@ -160,7 +164,7 @@ def analysis_and_model_page():
                 probability = best_model.predict_proba(input_data)[0][1]
                 
                 st.metric("Прогноз", "Отказ оборудования ⚠️" if prediction == 1 else "Нормальная работа ✅")
-                st.progress(probability)
+                st.progress(int(probability*100))
                 st.write(f"Вероятность отказа: {probability:.2%}")
                 
                 # Интерпретация
